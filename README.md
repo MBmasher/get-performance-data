@@ -1,3 +1,8 @@
+### What does this do?
+
+This gets the latest dataset from [data.ppy.sh](https://data.ppy.sh), unzips it and converts the many sql files into csv files.
+
+
 ### Initialising
 
 Clone the repo:

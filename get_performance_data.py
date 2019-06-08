@@ -90,9 +90,9 @@ def main():
     signal.signal(signal.SIGTSTP, exit)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", nargs="?", default="osu")
-    parser.add_argument("--type", nargs="?", default="top")
-    parser.add_argument("--output-directory", nargs="?", default="./")
+    parser.add_argument("--mode", nargs="?", default="osu", help="Modes: osu, taiko, fruits, mania (Defaults to osu)")
+    parser.add_argument("--type", nargs="?", default="top", help="Types: top, random (Defaults to top)")
+    parser.add_argument("--output-directory", nargs="?", default="./", help="(Defaults to ./)")
     args = parser.parse_args()
 
     directory_final = args.output_directory

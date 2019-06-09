@@ -87,7 +87,7 @@ def sql_to_csv(directory):
 
         sql_filename = ".".join(sql_file.split(".")[:-1])
 
-        sql_file_open = open(directory + sql_file, "r")
+        sql_file_open = open(directory + sql_file, "r", encoding="utf8", errors='ignore')
         csv_file_open = open(directory + sql_filename + ".csv", "w+")
 
         sql_file_lines = [i.split("\n")[0] for i in sql_file_open.readlines()]

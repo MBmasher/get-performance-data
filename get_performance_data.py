@@ -11,7 +11,7 @@ import csv
 import os
 
 
-def get_latest(mode, type):
+def get_latest(mode_arg="osu", type_arg="top", disable_output_arg=False):
     page_link = "https://data.ppy.sh"
     page_response = requests.get(page_link, timeout=5)
     page_content = BeautifulSoup(page_response.content, "html.parser")
@@ -27,7 +27,10 @@ def get_latest(mode, type):
         if len(file_underscore_split) < 6:
             continue
 
-        if file_underscore_split[-2] == mode and file_underscore_split[-1] == type:
+        if (
+            file_underscore_split[-2] == mode_arg
+            and file_underscore_split[-1] == type_arg
+        ):
             year = int(file_underscore_split[0])
             month = int(file_underscore_split[1])
             day = int(file_underscore_split[2])
@@ -41,28 +44,37 @@ def get_latest(mode, type):
     return latest_file
 
 
-def download_file(filename, directory):
+def download_file(filename, directory="./", disable_output_arg=False):
+    directory_final = directory
+    if directory_final[-1] != "/":
+        directory_final += "/"
+
     page_link = "https://data.ppy.sh/{}".format(filename)
     page_response = requests.get(page_link)
 
-    print("Creating file to write to...")
-    zip_file = open(directory + filename, "wb+")
+    if not disable_output_arg: print("Creating file to write to...")
+    zip_file = open(directory_final + filename, "wb+")
 
-    print("Starting download...")
+    if not disable_output_arg: print("Starting download...")
     dl = 0
-    for data in tqdm(page_response.iter_content(chunk_size=4096)):
+    data_generator = page_response.iter_content(chunk_size=4096)
+    if not disable_output_arg: data_generator = tqdm(data_generator)
+    for data in data_generator:
         dl += len(data)
         zip_file.write(data)
 
     zip_file.close()
 
 
-def unzip_file(filename, directory):
-    print("Unzipping file...")
-    tar = tarfile.open(directory + filename, "r:bz2")
+def unzip_file(filename, directory="./", disable_output_arg=False):
+    directory_final = directory
+    if directory_final[-1] != "/":
+        directory_final += "/"
+
+    tar = tarfile.open(directory_final + filename, "r:bz2")
 
     for member_info in tar.getmembers():
-        print("- extracting: " + member_info.name)
+        if not disable_output_arg: print("- extracting: " + member_info.name)
         tar.extract(member_info)
 
     tar.close()
@@ -76,26 +88,35 @@ def get_first_char(input_string):
     return None
 
 
-def sql_to_csv(directory):
-    for sql_file in os.listdir(directory):
-        if not os.path.isfile(os.path.join(directory, sql_file)):
+def sql_to_csv(filename, directory="./", disable_output_arg=False):
+    directory_final = directory
+    if directory_final[-1] != "/":
+        directory_final += "/"
+    directory_final += filename
+
+    for sql_file in os.listdir(directory_final):
+        if not os.path.isfile(os.path.join(directory_final, sql_file)):
             continue
         if sql_file.split(".")[-1] != "sql":
             continue
 
-        print("- converting: " + sql_file)
+        if not disable_output_arg: print("- converting: " + sql_file)
 
         sql_filename = ".".join(sql_file.split(".")[:-1])
 
-        sql_file_open = open(directory + sql_file, "r", encoding="utf8", errors='ignore')
-        csv_file_open = open(directory + sql_filename + ".csv", "w+")
+        sql_file_open = open(
+            directory_final + sql_file, "r", encoding="utf8", errors="ignore"
+        )
+        csv_file_open = open(directory_final + sql_filename + ".csv", "w+")
 
         sql_file_lines = [i.split("\n")[0] for i in sql_file_open.readlines()]
 
         headers = []
         getting_headers = False
 
-        for line in tqdm(sql_file_lines):
+        line_generator = sql_file_lines
+        if not disable_output_arg: line_generator = tqdm(line_generator)
+        for line in line_generator:
             if line.startswith("CREATE TABLE"):
                 getting_headers = True
                 continue
@@ -150,9 +171,22 @@ def sql_to_csv(directory):
                         writer.writerow(latest_row)
 
         sql_file_open.close()
-        os.remove(directory + sql_file)
+        os.remove(directory_final + sql_file)
 
         csv_file_open.close()
+
+
+def download_and_convert(
+    mode_arg="osu", type_arg="top", directory_arg="./", disable_output_arg=False
+):
+    if not disable_output_arg: print("Getting latest file...")
+    latest_file = get_latest(mode_arg, type_arg, disable_output_arg)
+    if not disable_output_arg: print("Connecting to data.ppy.sh...")
+    download_file(latest_file, directory_arg, disable_output_arg)
+    if not disable_output_arg: print("Unzipping file...")
+    unzip_file(latest_file, directory_arg, disable_output_arg)
+    if not disable_output_arg: print("Converting all sql files to csv...")
+    sql_to_csv(directory_arg, latest_file.split(".")[0], disable_output_arg)
 
 
 def main():
@@ -173,19 +207,18 @@ def main():
     parser.add_argument(
         "--output-directory", nargs="?", default="./", help="(Defaults to ./)"
     )
+    parser.add_argument(
+        "--disable-output",
+        nargs="?",
+        default=False,
+        const=True,
+        help="Add this to disable progress outputs.",
+    )
     args = parser.parse_args()
 
-    directory_final = args.output_directory
-    if directory_final[-1] != "/":
-        directory_final += "/"
-
-    print("Getting latest file...")
-    latest_file = get_latest(args.mode, args.type)
-    print("Connecting to data.ppy.sh...")
-    download_file(latest_file, directory_final)
-    unzip_file(latest_file, directory_final)
-    print("Converting all sql files to csv...")
-    sql_to_csv(directory_final + latest_file.split(".")[0] + "/")
+    download_and_convert(
+        args.mode, args.type, args.output_directory, args.disable_output
+    )
 
 
 if __name__ == "__main__":

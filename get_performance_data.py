@@ -52,13 +52,16 @@ def download_file(filename, directory="./", disable_output_arg=False):
     page_link = "https://data.ppy.sh/{}".format(filename)
     page_response = requests.get(page_link)
 
-    if not disable_output_arg: print("Creating file to write to...")
+    if not disable_output_arg:
+        print("Creating file to write to...")
     zip_file = open(directory_final + filename, "wb+")
 
-    if not disable_output_arg: print("Starting download...")
+    if not disable_output_arg:
+        print("Starting download...")
     dl = 0
     data_generator = page_response.iter_content(chunk_size=4096)
-    if not disable_output_arg: data_generator = tqdm(data_generator)
+    if not disable_output_arg:
+        data_generator = tqdm(data_generator)
     for data in data_generator:
         dl += len(data)
         zip_file.write(data)
@@ -74,7 +77,8 @@ def unzip_file(filename, directory="./", disable_output_arg=False):
     tar = tarfile.open(directory_final + filename, "r:bz2")
 
     for member_info in tar.getmembers():
-        if not disable_output_arg: print("- extracting: " + member_info.name)
+        if not disable_output_arg:
+            print("- extracting: " + member_info.name)
         tar.extract(member_info)
 
     tar.close()
@@ -100,7 +104,8 @@ def sql_to_csv(filename, directory="./", disable_output_arg=False):
         if sql_file.split(".")[-1] != "sql":
             continue
 
-        if not disable_output_arg: print("- converting: " + sql_file)
+        if not disable_output_arg:
+            print("- converting: " + sql_file)
 
         sql_filename = ".".join(sql_file.split(".")[:-1])
 
@@ -115,7 +120,8 @@ def sql_to_csv(filename, directory="./", disable_output_arg=False):
         getting_headers = False
 
         line_generator = sql_file_lines
-        if not disable_output_arg: line_generator = tqdm(line_generator)
+        if not disable_output_arg:
+            line_generator = tqdm(line_generator)
         for line in line_generator:
             if line.startswith("CREATE TABLE"):
                 getting_headers = True
@@ -179,13 +185,17 @@ def sql_to_csv(filename, directory="./", disable_output_arg=False):
 def download_and_convert(
     mode_arg="osu", type_arg="top", directory_arg="./", disable_output_arg=False
 ):
-    if not disable_output_arg: print("Getting latest file...")
+    if not disable_output_arg:
+        print("Getting latest file...")
     latest_file = get_latest(mode_arg, type_arg, disable_output_arg)
-    if not disable_output_arg: print("Connecting to data.ppy.sh...")
+    if not disable_output_arg:
+        print("Connecting to data.ppy.sh...")
     download_file(latest_file, directory_arg, disable_output_arg)
-    if not disable_output_arg: print("Unzipping file...")
+    if not disable_output_arg:
+        print("Unzipping file...")
     unzip_file(latest_file, directory_arg, disable_output_arg)
-    if not disable_output_arg: print("Converting all sql files to csv...")
+    if not disable_output_arg:
+        print("Converting all sql files to csv...")
     sql_to_csv(directory_arg, latest_file.split(".")[0], disable_output_arg)
 
 

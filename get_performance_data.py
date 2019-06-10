@@ -58,12 +58,10 @@ def download_file(filename, directory="./", disable_output_arg=False):
 
     if not disable_output_arg:
         print("Starting download...")
-    dl = 0
     data_generator = page_response.iter_content(chunk_size=4096)
     if not disable_output_arg:
         data_generator = tqdm(data_generator)
     for data in data_generator:
-        dl += len(data)
         zip_file.write(data)
 
     zip_file.close()
